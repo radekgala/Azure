@@ -19,7 +19,44 @@
       "allowedValues": [
         "westeurope"
       ]
-    }
+    },
+      "WebServerName": {
+          "type": "string",
+          "minLength": 1
+      },
+      "WebServerAdminUserName": {
+          "type": "string",
+          "minLength": 1
+      },
+      "WebServerAdminPassword": {
+          "type": "securestring"
+      },
+      "WebServerWindowsOSVersion": {
+          "type": "string",
+          "defaultValue": "2012-R2-Datacenter",
+          "allowedValues": [
+              "2008-R2-SP1",
+              "2012-Datacenter",
+              "2012-R2-Datacenter",
+              "Windows-Server-Technical-Preview"
+          ]
+      },
+      "WebServerPublicIPDnsName": {
+          "type": "string",
+          "minLength": 1
+      },
+      "_artifactsLocation": {
+          "type": "string",
+          "metadata": {
+              "description": "Auto-generated container in staging storage account to receive post-build staging folder upload"
+          }
+      },
+      "_artifactsLocationSasToken": {
+          "type": "securestring",
+          "metadata": {
+              "description": "Auto-generated token to access _artifactsLocation"
+          }
+      }
   },
   "variables": {
     "hackathonVnetPrefix": "10.0.0.0/16",
@@ -27,7 +64,18 @@
     "FrontEndNetPrefix": "10.0.0.0/24",
     "DataBaseNetName": "DatabaseNet",
     "DataBaseNetPrefix": "10.0.1.0/24",
-    "hackstorageName": "[concat('hackstorage', uniqueString(resourceGroup().id))]"
+    "hackstorageName": "[concat('hackstorage', uniqueString(resourceGroup().id))]",
+      "WebServerImagePublisher": "MicrosoftWindowsServer",
+      "WebServerImageOffer": "WindowsServer",
+      "WebServerOSDiskName": "WebServerOSDisk",
+      "WebServerVmSize": "Standard_D2_v2",
+      "WebServerVnetID": "[resourceId('Microsoft.Network/virtualNetworks', 'hackathonVnet')]",
+      "WebServerSubnetRef": "[concat(variables('WebServerVnetID'), '/subnets/', variables('FrontEndNetName'))]",
+      "WebServerStorageAccountContainerName": "vhds",
+      "WebServerNicName": "[concat(parameters('WebServerName'), 'NetworkInterface')]",
+      "WebServerPublicIPName": "WebServerPublicIP",
+      "hackathonDSCArchiveFolder": "DSC",
+      "hackathonDSCArchiveFileName": "hackathonDSC.zip"
   },
   "resources": [
     {
@@ -73,7 +121,132 @@
       "properties": {
         "accountType": "[parameters('hackstorageType')]"
       }
-    }
+    },
+      {
+          "name": "[variables('WebServerNicName')]",
+          "type": "Microsoft.Network/networkInterfaces",
+          "location": "[resourceGroup().location]",
+          "apiVersion": "2016-03-30",
+          "dependsOn": [
+              "[resourceId('Microsoft.Network/virtualNetworks', 'hackathonVnet')]",
+              "[resourceId('Microsoft.Network/publicIPAddresses', variables('WebServerPublicIPName'))]"
+          ],
+          "tags": {
+              "displayName": "WebServerNic"
+          },
+          "properties": {
+              "ipConfigurations": [
+                  {
+                      "name": "ipconfig1",
+                      "properties": {
+                          "privateIPAllocationMethod": "Dynamic",
+                          "subnet": {
+                              "id": "[variables('WebServerSubnetRef')]"
+                          },
+                          "publicIPAddress": {
+                              "id": "[resourceId('Microsoft.Network/publicIPAddresses', variables('WebServerPublicIPName'))]"
+                          }
+                      }
+                  }
+              ]
+          }
+      },
+      {
+          "name": "[parameters('WebServerName')]",
+          "type": "Microsoft.Compute/virtualMachines",
+          "location": "[parameters('AllowedLocations')]",
+          "apiVersion": "2015-06-15",
+          "dependsOn": [
+              "[resourceId('Microsoft.Storage/storageAccounts', variables('hackstorageName'))]",
+              "[resourceId('Microsoft.Network/networkInterfaces', variables('WebServerNicName'))]"
+          ],
+          "tags": {
+              "displayName": "WebServer"
+          },
+          "properties": {
+              "hardwareProfile": {
+                  "vmSize": "[variables('WebServerVmSize')]"
+              },
+              "osProfile": {
+                  "computerName": "[parameters('WebServerName')]",
+                  "adminUsername": "[parameters('WebServerAdminUsername')]",
+                  "adminPassword": "[parameters('WebServerAdminPassword')]"
+              },
+              "storageProfile": {
+                  "imageReference": {
+                      "publisher": "[variables('WebServerImagePublisher')]",
+                      "offer": "[variables('WebServerImageOffer')]",
+                      "sku": "[parameters('WebServerWindowsOSVersion')]",
+                      "version": "latest"
+                  },
+                  "osDisk": {
+                      "name": "WebServerOSDisk",
+                      "vhd": {
+                          "uri": "[concat(reference(resourceId('Microsoft.Storage/storageAccounts', variables('hackstorageName')), '2016-01-01').primaryEndpoints.blob, variables('WebServerStorageAccountContainerName'), '/', variables('WebServerOSDiskName'), '.vhd')]"
+                      },
+                      "caching": "ReadWrite",
+                      "createOption": "FromImage"
+                  }
+              },
+              "networkProfile": {
+                  "networkInterfaces": [
+                      {
+                          "id": "[resourceId('Microsoft.Network/networkInterfaces', variables('WebServerNicName'))]"
+                      }
+                  ]
+              }
+          },
+          "resources": [
+              {
+                  "name": "Microsoft.Powershell.DSC",
+                  "type": "extensions",
+                  "location": "[parameters('AllowedLocations')]",
+                  "apiVersion": "2016-03-30",
+                  "dependsOn": [
+                      "[resourceId('Microsoft.Compute/virtualMachines', parameters('WebServerName'))]"
+                  ],
+                  "tags": {
+                      "displayName": "hackathonDSC"
+                  },
+                  "properties": {
+                      "publisher": "Microsoft.Powershell",
+                      "type": "DSC",
+                      "typeHandlerVersion": "2.9",
+                      "autoUpgradeMinorVersion": true,
+                      "settings": {
+                          "configuration": {
+                              "url": "[concat(parameters('_artifactsLocation'), '/', variables('hackathonDSCArchiveFolder'), '/', variables('hackathonDSCArchiveFileName'))]",
+                              "script": "hackathonDSC.ps1",
+                              "function": "Main"
+                          },
+                          "configurationArguments": {
+                              "nodeName": "[parameters('WebServerName')]"
+                          }
+                      },
+                      "protectedSettings": {
+                          "configurationUrlSasToken": "[parameters('_artifactsLocationSasToken')]"
+                      }
+                  }
+              }
+              
+          ]
+      },
+      {
+          "name": "[variables('WebServerPublicIPName')]",
+          "type": "Microsoft.Network/publicIPAddresses",
+          "location": "[resourceGroup().location]",
+          "apiVersion": "2016-03-30",
+          "dependsOn": [ ],
+          "tags": {
+              "displayName": "WebServerPublicIP"
+          },
+          "properties": {
+              "publicIPAllocationMethod": "Dynamic",
+              "dnsSettings": {
+                  "domainNameLabel": "[parameters('WebServerPublicIPDnsName')]"
+              }
+          }
+      }
   ],
   "outputs": {}
 }

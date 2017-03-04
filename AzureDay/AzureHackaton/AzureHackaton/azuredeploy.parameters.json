@@ -2,5 +2,17 @@
     "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
     "contentVersion": "1.0.0.0",
     "parameters": {
+        "WebServerName": {
+            "value": "HackWebServer"
+        },
+        "WebServerAdminUserName": {
+            "value": "rgala"
+        },
+        "WebServerWindowsOSVersion": {
+            "value": "2008-R2-SP1"
+        },
+        "WebServerPublicIPDnsName": {
+            "value": "rgalahackaton"
+        }
     }
 }

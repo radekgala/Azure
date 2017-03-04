@@ -1,45 +1,79 @@
 {
   "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
   "contentVersion": "1.0.0.0",
-  "parameters": {},
+  "parameters": {
+    "hackstorageType": {
+      "type": "string",
+      "defaultValue": "Standard_LRS",
+      "allowedValues": [
+        "Standard_LRS",
+        "Standard_ZRS",
+        "Standard_GRS",
+        "Standard_RAGRS",
+        "Premium_LRS"
+      ]
+    },
+    "AllowedLocations": {
+      "type": "string",
+      "defaultValue": "westeurope",
+      "allowedValues": [
+        "westeurope"
+      ]
+    }
+  },
   "variables": {
     "hackathonVnetPrefix": "10.0.0.0/16",
     "FrontEndNetName": "FrontEndNet",
     "FrontEndNetPrefix": "10.0.0.0/24",
     "DataBaseNetName": "DatabaseNet",
-    "DataBaseNetPrefix": "10.0.1.0/24"
+    "DataBaseNetPrefix": "10.0.1.0/24",
+    "hackstorageName": "[concat('hackstorage', uniqueString(resourceGroup().id))]"
   },
   "resources": [
-      {
-          "name": "hackathonVnet",
-          "type": "Microsoft.Network/virtualNetworks",
-          "location": "[resourceGroup().location]",
-          "apiVersion": "2016-03-30",
-          "dependsOn": [ ],
-          "tags": {
-              "displayName": "hackathonVnet"
+    {
+      "name": "hackathonVnet",
+      "type": "Microsoft.Network/virtualNetworks",
+      "location": "[resourceGroup().location]",
+      "apiVersion": "2016-03-30",
+      "dependsOn": [],
+      "tags": {
+        "displayName": "hackathonVnet"
+      },
+      "properties": {
+        "addressSpace": {
+          "addressPrefixes": [
+            "[variables('hackathonVnetPrefix')]"
+          ]
+        },
+        "subnets": [
+          {
+            "name": "[variables('FrontEndNetName')]",
+            "properties": {
+              "addressPrefix": "[variables('FrontEndNetPrefix')]"
+            }
           },
-          "properties": {
-              "addressSpace": {
-                  "addressPrefixes": [
-                      "[variables('hackathonVnetPrefix')]"
-                  ]
-              },
-              "subnets": [
-                  {
-                      "name": "[variables('FrontEndNetName')]",
-                      "properties": {
-                          "addressPrefix": "[variables('FrontEndNetPrefix')]"
-                      }
-                  },
-                  {
-                      "name": "[variables('DataBaseNetName')]",
-                      "properties": {
-                          "addressPrefix": "[variables('DataBaseNetPrefix')]"
-                      }
-                  }
-              ]
+          {
+            "name": "[variables('DataBaseNetName')]",
+            "properties": {
+              "addressPrefix": "[variables('DataBaseNetPrefix')]"
+            }
           }
-      }],
+        ]
+      }
+    },
+    {
+      "name": "[variables('hackstorageName')]",
+      "type": "Microsoft.Storage/storageAccounts",
+      "location": "[parameters('AllowedLocations')]",
+      "apiVersion": "2015-06-15",
+      "dependsOn": [],
+      "tags": {
+        "displayName": "hackstorage"
+      },
+      "properties": {
+        "accountType": "[parameters('hackstorageType')]"
+      }
+    }
+  ],
   "outputs": {}
 }

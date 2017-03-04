@@ -9,10 +9,19 @@
             "value": "rgala"
         },
         "WebServerWindowsOSVersion": {
-            "value": "2008-R2-SP1"
+            "value": "2012-R2-Datacenter"
         },
         "WebServerPublicIPDnsName": {
             "value": "rgalahackaton"
+        },
+        "WebServerAdminPassword": {
+            "value": "0Ntrack_1dev"
+        },
+        "rebootNodeIfNeeded": {
+            "value": true
+        },
+        "allowModuleOverwrite": {
+            "value": true
         }
     }
 }

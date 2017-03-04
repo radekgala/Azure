@@ -20,43 +20,101 @@
         "westeurope"
       ]
     },
-      "WebServerName": {
-          "type": "string",
-          "minLength": 1
-      },
-      "WebServerAdminUserName": {
-          "type": "string",
-          "minLength": 1
-      },
-      "WebServerAdminPassword": {
-          "type": "securestring"
-      },
-      "WebServerWindowsOSVersion": {
-          "type": "string",
-          "defaultValue": "2012-R2-Datacenter",
-          "allowedValues": [
-              "2008-R2-SP1",
-              "2012-Datacenter",
-              "2012-R2-Datacenter",
-              "Windows-Server-Technical-Preview"
-          ]
-      },
-      "WebServerPublicIPDnsName": {
-          "type": "string",
-          "minLength": 1
-      },
-      "_artifactsLocation": {
-          "type": "string",
-          "metadata": {
-              "description": "Auto-generated container in staging storage account to receive post-build staging folder upload"
-          }
-      },
-      "_artifactsLocationSasToken": {
-          "type": "securestring",
-          "metadata": {
-              "description": "Auto-generated token to access _artifactsLocation"
-          }
+    "WebServerName": {
+      "type": "string",
+      "minLength": 1
+    },
+    "WebServerAdminUserName": {
+      "type": "string",
+      "minLength": 1
+    },
+    "WebServerAdminPassword": {
+      "type": "securestring"
+    },
+    "WebServerWindowsOSVersion": {
+      "type": "string",
+      "defaultValue": "2012-R2-Datacenter",
+      "allowedValues": [
+        "2012-R2-Datacenter"
+      ]
+    },
+    "WebServerPublicIPDnsName": {
+      "type": "string",
+      "minLength": 1
+    },
+    "registrationKey": {
+      "type": "string",
+      "metadata": {
+        "description": "Registration key of Automation account"
       }
+    },
+    "registrationUrl": {
+      "type": "string",
+      "metadata": {
+        "description": "Registration URL of Automation account"
+      }
+    },
+    "nodeConfigurationName": {
+      "type": "string",
+      "metadata": {
+        "description": "Name of configuration to apply"
+      }
+    },
+    "rebootNodeIfNeeded": {
+      "type": "bool",
+      "metadata": {
+        "description": "Reboot if needed"
+      }
+    },
+    "allowModuleOverwrite": {
+      "type": "bool",
+      "metadata": {
+        "description": "Allow Module Overwrite"
+      }
+    },
+    "configurationMode": {
+      "type": "string",
+      "defaultValue": "ApplyAndMonitor",
+      "allowedValues": [
+        "ApplyAndMonitor",
+        "ApplyOnly",
+        "ApplyandAutoCorrect"
+      ],
+      "metadata": {
+        "description": "Configuration Mode"
+      }
+    },
+    "configurationModeFrequencyMins": {
+      "type": "int",
+      "metadata": {
+        "description": "Allow Module Overwrite"
+      }
+    },
+    "refreshFrequencyMins": {
+      "type": "int",
+      "metadata": {
+        "description": "Refresh frequency in minutes"
+      }
+    },
+    "actionAfterReboot": {
+      "type": "string",
+      "defaultValue": "ContinueConfiguration",
+      "allowedValues": [
+        "ContinueConfiguration",
+        "StopConfiguration"
+      ],
+      "metadata": {
+        "description": "Action after reboot"
+      }
+    },
+    "timestamp": {
+      "type": "string",
+      "metadata": {
+        "description": "Time stamp MM/dd/YYYY H:mm:ss"
+      }
+    }
+
+
   },
   "variables": {
     "hackathonVnetPrefix": "10.0.0.0/16",
@@ -65,17 +123,20 @@
     "DataBaseNetName": "DatabaseNet",
     "DataBaseNetPrefix": "10.0.1.0/24",
     "hackstorageName": "[concat('hackstorage', uniqueString(resourceGroup().id))]",
-      "WebServerImagePublisher": "MicrosoftWindowsServer",
-      "WebServerImageOffer": "WindowsServer",
-      "WebServerOSDiskName": "WebServerOSDisk",
-      "WebServerVmSize": "Standard_D2_v2",
-      "WebServerVnetID": "[resourceId('Microsoft.Network/virtualNetworks', 'hackathonVnet')]",
-      "WebServerSubnetRef": "[concat(variables('WebServerVnetID'), '/subnets/', variables('FrontEndNetName'))]",
-      "WebServerStorageAccountContainerName": "vhds",
-      "WebServerNicName": "[concat(parameters('WebServerName'), 'NetworkInterface')]",
-      "WebServerPublicIPName": "WebServerPublicIP",
-      "hackathonDSCArchiveFolder": "DSC",
-      "hackathonDSCArchiveFileName": "hackathonDSC.zip"
+    "WebServerImagePublisher": "MicrosoftWindowsServer",
+    "WebServerImageOffer": "WindowsServer",
+    "WebServerOSDiskName": "WebServerOSDisk",
+    "WebServerVmSize": "Standard_D2_v2",
+    "WebServerVnetID": "[resourceId('Microsoft.Network/virtualNetworks', 'hackathonVnet')]",
+    "WebServerSubnetRef": "[concat(variables('WebServerVnetID'), '/subnets/', variables('FrontEndNetName'))]",
+    "WebServerStorageAccountContainerName": "vhds",
+    "WebServerNicName": "[concat(parameters('WebServerName'), 'NetworkInterface')]",
+    "WebServerPublicIPName": "WebServerPublicIP",
+    "hackathonDSCArchiveFolder": "DSC",
+    "hackathonDSCArchiveFileName": "hackathonDSC.zip",
+    "registrationKey": "nj5NIeQwWDnRCmvtHv47uckIND3twNsd3RIwwxUQiLtqqSFPD0WMKCOVWJmVhLF8Fn+JSIS0ajd2Lu2mBejiUQ==",
+    "registrationUrl": "https://we-agentservice-prod-1.azure-automation.net/accounts/3a80c0a6-acf3-4f45-9f78-ec64f24546af"
+
   },
   "resources": [
     {
@@ -151,86 +212,138 @@
               ]
           }
       },
-      {
-          "name": "[parameters('WebServerName')]",
-          "type": "Microsoft.Compute/virtualMachines",
-          "location": "[parameters('AllowedLocations')]",
+    {
+      "name": "[parameters('WebServerName')]",
+      "type": "Microsoft.Compute/virtualMachines",
+      "location": "[parameters('AllowedLocations')]",
+      "apiVersion": "2015-06-15",
+      "dependsOn": [
+        "[resourceId('Microsoft.Storage/storageAccounts', variables('hackstorageName'))]",
+        "[resourceId('Microsoft.Network/networkInterfaces', variables('WebServerNicName'))]"
+      ],
+      "tags": {
+        "displayName": "WebServer"
+      },
+      "properties": {
+        "hardwareProfile": {
+          "vmSize": "[variables('WebServerVmSize')]"
+        },
+        "osProfile": {
+          "computerName": "[parameters('WebServerName')]",
+          "adminUsername": "[parameters('WebServerAdminUsername')]",
+          "adminPassword": "[parameters('WebServerAdminPassword')]"
+        },
+        "storageProfile": {
+          "imageReference": {
+            "publisher": "[variables('WebServerImagePublisher')]",
+            "offer": "[variables('WebServerImageOffer')]",
+            "sku": "[parameters('WebServerWindowsOSVersion')]",
+            "version": "latest"
+          },
+          "osDisk": {
+            "name": "WebServerOSDisk",
+            "vhd": {
+              "uri": "[concat(reference(resourceId('Microsoft.Storage/storageAccounts', variables('hackstorageName')), '2016-01-01').primaryEndpoints.blob, variables('WebServerStorageAccountContainerName'), '/', variables('WebServerOSDiskName'), '.vhd')]"
+            },
+            "caching": "ReadWrite",
+            "createOption": "FromImage"
+          }
+        },
+        "networkProfile": {
+          "networkInterfaces": [
+            {
+              "id": "[resourceId('Microsoft.Network/networkInterfaces', variables('WebServerNicName'))]"
+            }
+          ]
+        }
+      },
+
+      "resources": [
+        {
+          "name": "hackathonDSC",
+          "type": "extensions",
+          "location": "[resourceGroup().location]",
           "apiVersion": "2015-06-15",
           "dependsOn": [
-              "[resourceId('Microsoft.Storage/storageAccounts', variables('hackstorageName'))]",
-              "[resourceId('Microsoft.Network/networkInterfaces', variables('WebServerNicName'))]"
+            "[concat('Microsoft.Compute/virtualMachines/', parameters('WebServerName'))]"
           ],
           "tags": {
-              "displayName": "WebServer"
+            "displayName": "hackathonDSC"
           },
           "properties": {
-              "hardwareProfile": {
-                  "vmSize": "[variables('WebServerVmSize')]"
-              },
-              "osProfile": {
-                  "computerName": "[parameters('WebServerName')]",
-                  "adminUsername": "[parameters('WebServerAdminUsername')]",
-                  "adminPassword": "[parameters('WebServerAdminPassword')]"
-              },
-              "storageProfile": {
-                  "imageReference": {
-                      "publisher": "[variables('WebServerImagePublisher')]",
-                      "offer": "[variables('WebServerImageOffer')]",
-                      "sku": "[parameters('WebServerWindowsOSVersion')]",
-                      "version": "latest"
-                  },
-                  "osDisk": {
-                      "name": "WebServerOSDisk",
-                      "vhd": {
-                          "uri": "[concat(reference(resourceId('Microsoft.Storage/storageAccounts', variables('hackstorageName')), '2016-01-01').primaryEndpoints.blob, variables('WebServerStorageAccountContainerName'), '/', variables('WebServerOSDiskName'), '.vhd')]"
-                      },
-                      "caching": "ReadWrite",
-                      "createOption": "FromImage"
-                  }
-              },
-              "networkProfile": {
-                  "networkInterfaces": [
-                      {
-                          "id": "[resourceId('Microsoft.Network/networkInterfaces', variables('WebServerNicName'))]"
-                      }
-                  ]
+            "publisher": "Microsoft.Powershell",
+            "type": "DSC",
+            "typeHandlerVersion": "2.19",
+            "autoUpgradeMinorVersion": true,
+            "protectedSettings": {
+              "Items": {
+                "registrationKeyPrivate": "[parameters('registrationKey')]"
               }
-          },
-          "resources": [
-              {
-                  "name": "Microsoft.Powershell.DSC",
-                  "type": "extensions",
-                  "location": "[parameters('AllowedLocations')]",
-                  "apiVersion": "2016-03-30",
-                  "dependsOn": [
-                      "[resourceId('Microsoft.Compute/virtualMachines', parameters('WebServerName'))]"
-                  ],
-                  "tags": {
-                      "displayName": "hackathonDSC"
+            },
+            "settings": {
+              "ModulesUrl": "https://opsgilityweb.blob.core.windows.net/20160629-arm-hackathon/RegistrationMetaConfigV2.zip",
+              "ConfigurationFunction": "RegistrationMetaConfigV2.ps1\\RegistrationMetaConfigV2",
+              "Properties": [
+                {
+                  "Name": "RegistrationKey",
+                  "Value": {
+                    "UserName": "PLACEHOLDER_DONOTUSE",
+                    "Password": "PrivateSettingsRef:registrationKeyPrivate"
                   },
-                  "properties": {
-                      "publisher": "Microsoft.Powershell",
-                      "type": "DSC",
-                      "typeHandlerVersion": "2.9",
-                      "autoUpgradeMinorVersion": true,
-                      "settings": {
-                          "configuration": {
-                              "url": "[concat(parameters('_artifactsLocation'), '/', variables('hackathonDSCArchiveFolder'), '/', variables('hackathonDSCArchiveFileName'))]",
-                              "script": "hackathonDSC.ps1",
-                              "function": "Main"
-                          },
-                          "configurationArguments": {
-                              "nodeName": "[parameters('WebServerName')]"
-                          }
-                      },
-                      "protectedSettings": {
-                          "configurationUrlSasToken": "[parameters('_artifactsLocationSasToken')]"
-                      }
-                  }
-              }
-              
-          ]
-      },
+                  "TypeName": "System.Management.Automation.PSCredential"
+                },
+                {
+                  "Name": "RegistrationUrl",
+                  "Value": "[parameters('registrationUrl')]",
+                  "TypeName": "System.String"
+                },
+                {
+                  "Name": "NodeConfigurationName",
+                  "Value": "[parameters('nodeConfigurationName')]",
+                  "TypeName": "System.String"
+                },
+                {
+                  "Name": "ConfigurationMode",
+                  "Value": "[parameters('configurationMode')]",
+                  "TypeName": "System.String"
+                },
+                {
+                  "Name": "ConfigurationModeFrequencyMins",
+                  "Value": "[parameters('configurationModeFrequencyMins')]",
+                  "TypeName": "System.Int32"
+                },
+                {
+                  "Name": "RefreshFrequencyMins",
+                  "Value": "[parameters('refreshFrequencyMins')]",
+                  "TypeName": "System.Int32"
+                },
+                {
+                  "Name": "RebootNodeIfNeeded",
+                  "Value": "[parameters('rebootNodeIfNeeded')]",
+                  "TypeName": "System.Boolean"
+                },
+                {
+                  "Name": "ActionAfterReboot",
+                  "Value": "[parameters('actionAfterReboot')]",
+                  "TypeName": "System.String"
+                },
+                {
+                  "Name": "AllowModuleOverwrite",
+                  "Value": "[parameters('allowModuleOverwrite')]",
+                  "TypeName": "System.Boolean"
+                },
+                {
+                  "Name": "Timestamp",
+                  "Value": "[parameters('timestamp')]",
+                  "TypeName": "System.String"
+                }
+              ]
+            }
+          }
+        }
+      ]
+
+    },
       {
           "name": "[variables('WebServerPublicIPName')]",
           "type": "Microsoft.Network/publicIPAddresses",

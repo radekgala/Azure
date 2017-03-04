@@ -3,10 +3,10 @@
     "contentVersion": "1.0.0.0",
     "parameters": {
         "WebServerName": {
-            "value": "HackWebServer"
+            "value": "armweb"
         },
         "WebServerAdminUserName": {
-            "value": "rgala"
+            "value": "demouser"
         },
         "WebServerWindowsOSVersion": {
             "value": "2012-R2-Datacenter"
@@ -15,13 +15,46 @@
             "value": "rgalahackaton"
         },
         "WebServerAdminPassword": {
-            "value": "0Ntrack_1dev"
+            "value": "demo@pass123"
         },
         "rebootNodeIfNeeded": {
             "value": true
         },
         "allowModuleOverwrite": {
             "value": true
+        },
+        "registrationKey": {
+            "value": "nj5NIeQwWDnRCmvtHv47uckIND3twNsd3RIwwxUQiLtqqSFPD0WMKCOVWJmVhLF8Fn+JSIS0ajd2Lu2mBejiUQ=="
+        },
+        "registrationUrl": {
+            "value": "https://we-agentservice-prod-1.azure-automation.net/accounts/3a80c0a6-acf3-4f45-9f78-ec64f24546af"
+        },
+        "nodeConfigurationName": {
+            "value": "CloudShopWeb.WebServer"
+        },
+        "configurationModeFrequencyMins": {
+            "value": 15
+        },
+        "refreshFrequencyMins": {
+            "value": 30
+        },
+        "timestamp": {
+            "value": "10"
+        },
+        "hackathonSqlVM Name": {
+            "value": "armsql"
+        },
+        "hackathonSqlVM AdminUserName": {
+            "value": "demouser"
+        },
+        "hackathonSqlVM AdminPassword": {
+            "value": "demo@pass123"
+        },
+        "sqlnodeConfigurationName": {
+            "value": "CloudShopSQL.SQLSERVER"
+        },
+        "hackathonSqlVMName": {
+            "value": "armsql"
         }
     }
 }

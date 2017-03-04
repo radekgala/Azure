@@ -4,10 +4,10 @@
   "parameters": {},
   "variables": {
     "hackathonVnetPrefix": "10.0.0.0/16",
-    "hackathonVnetSubnet1Name": "FrontEndNet",
-    "hackathonVnetSubnet1Prefix": "10.0.0.0/24",
-    "hackathonVnetSubnet2Name": "DatabaseNet",
-    "hackathonVnetSubnet2Prefix": "10.0.1.0/24"
+    "FrontEndNetName": "FrontEndNet",
+    "FrontEndNetPrefix": "10.0.0.0/24",
+    "DataBaseNetName": "DatabaseNet",
+    "DataBaseNetPrefix": "10.0.1.0/24"
   },
   "resources": [
       {
@@ -27,15 +27,15 @@
               },
               "subnets": [
                   {
-                      "name": "[variables('hackathonVnetSubnet1Name')]",
+                      "name": "[variables('FrontEndNetName')]",
                       "properties": {
-                          "addressPrefix": "[variables('hackathonVnetSubnet1Prefix')]"
+                          "addressPrefix": "[variables('FrontEndNetPrefix')]"
                       }
                   },
                   {
-                      "name": "[variables('hackathonVnetSubnet2Name')]",
+                      "name": "[variables('DataBaseNetName')]",
                       "properties": {
-                          "addressPrefix": "[variables('hackathonVnetSubnet2Prefix')]"
+                          "addressPrefix": "[variables('DataBaseNetPrefix')]"
                       }
                   }
               ]

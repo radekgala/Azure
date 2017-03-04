@@ -145,8 +145,7 @@
       ]
     },
     "sqlnodeConfigurationName": {
-      "type": "string",
-      "minLength": 1
+      "type": "string"
     },
     "hackathonSqlVMName": {
       "type": "string",
@@ -187,6 +186,32 @@
     "dataDisk2VhdName": "[concat('http://',variables('hackstorageName'),'.blob.core.windows.net/','vhds','/','dataDisk2.vhd')]"
   },
   "resources": [
+
+    {
+      "apiVersion": "2016-03-30",
+      "type": "Microsoft.Network/networkSecurityGroups",
+      "name": "hackathonNetworkSecurityGroup",
+      "location": "[resourceGroup().location]",
+      "properties": {
+        "securityRules": [
+          {
+            "name": "webrule",
+            "properties": {
+              "description": "This rule allows traffic in on port 80",
+              "protocol": "Tcp",
+              "sourcePortRange": "*",
+              "destinationPortRange": "80",
+              "sourceAddressPrefix": "INTERNET",
+              "destinationAddressPrefix": "10.0.0.0/24",
+              "access": "Allow",
+              "priority": 100,
+              "direction": "Inbound"
+            }
+          }
+        ]
+      }
+    },
+
     {
       "name": "hackathonVnet",
       "type": "Microsoft.Network/virtualNetworks",
@@ -196,6 +221,9 @@
       "tags": {
         "displayName": "hackathonVnet"
       },
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/networkSecurityGroups', 'hackathonNetworkSecurityGroup')]"
+      ],
       "properties": {
         "addressSpace": {
           "addressPrefixes": [
@@ -206,7 +234,10 @@
           {
             "name": "[variables('FrontEndNetName')]",
             "properties": {
-              "addressPrefix": "[variables('FrontEndNetPrefix')]"
+              "addressPrefix": "[variables('FrontEndNetPrefix')]",
+              "networkSecurityGroup": {
+                "id": "[resourceId('Microsoft.Network/networkSecurityGroups', 'hackathonNetworkSecurityGroup')]"
+              }
             }
           },
           {
@@ -231,35 +262,35 @@
         "accountType": "[parameters('hackstorageType')]"
       }
     },
-      {
-          "name": "[variables('WebServerNicName')]",
-          "type": "Microsoft.Network/networkInterfaces",
-          "location": "[resourceGroup().location]",
-          "apiVersion": "2016-03-30",
-          "dependsOn": [
-              "[resourceId('Microsoft.Network/virtualNetworks', 'hackathonVnet')]",
-              "[resourceId('Microsoft.Network/publicIPAddresses', variables('WebServerPublicIPName'))]"
-          ],
-          "tags": {
-              "displayName": "WebServerNic"
-          },
-          "properties": {
-              "ipConfigurations": [
-                  {
-                      "name": "ipconfig1",
-                      "properties": {
-                          "privateIPAllocationMethod": "Dynamic",
-                          "subnet": {
-                              "id": "[variables('WebServerSubnetRef')]"
-                          },
-                          "publicIPAddress": {
-                              "id": "[resourceId('Microsoft.Network/publicIPAddresses', variables('WebServerPublicIPName'))]"
-                          }
-                      }
-                  }
-              ]
-          }
+    {
+      "name": "[variables('WebServerNicName')]",
+      "type": "Microsoft.Network/networkInterfaces",
+      "location": "[resourceGroup().location]",
+      "apiVersion": "2016-03-30",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/virtualNetworks', 'hackathonVnet')]",
+        "[resourceId('Microsoft.Network/publicIPAddresses', variables('WebServerPublicIPName'))]"
+      ],
+      "tags": {
+        "displayName": "WebServerNic"
       },
+      "properties": {
+        "ipConfigurations": [
+          {
+            "name": "ipconfig1",
+            "properties": {
+              "privateIPAllocationMethod": "Dynamic",
+              "subnet": {
+                "id": "[variables('WebServerSubnetRef')]"
+              },
+              "publicIPAddress": {
+                "id": "[resourceId('Microsoft.Network/publicIPAddresses', variables('WebServerPublicIPName'))]"
+              }
+            }
+          }
+        ]
+      }
+    },
     {
       "name": "[parameters('WebServerName')]",
       "type": "Microsoft.Compute/virtualMachines",
@@ -394,47 +425,47 @@
       ]
 
     },
-      {
-          "name": "[variables('WebServerPublicIPName')]",
-          "type": "Microsoft.Network/publicIPAddresses",
-          "location": "[resourceGroup().location]",
-          "apiVersion": "2016-03-30",
-          "dependsOn": [ ],
-          "tags": {
-              "displayName": "WebServerPublicIP"
-          },
-          "properties": {
-              "publicIPAllocationMethod": "Dynamic",
-              "dnsSettings": {
-                  "domainNameLabel": "[parameters('WebServerPublicIPDnsName')]"
+    {
+      "name": "[variables('WebServerPublicIPName')]",
+      "type": "Microsoft.Network/publicIPAddresses",
+      "location": "[resourceGroup().location]",
+      "apiVersion": "2016-03-30",
+      "dependsOn": [],
+      "tags": {
+        "displayName": "WebServerPublicIP"
+      },
+      "properties": {
+        "publicIPAllocationMethod": "Dynamic",
+        "dnsSettings": {
+          "domainNameLabel": "[parameters('WebServerPublicIPDnsName')]"
+        }
+      }
+    },
+    {
+      "name": "[variables('hackathonSqlVM NicName')]",
+      "type": "Microsoft.Network/networkInterfaces",
+      "location": "[resourceGroup().location]",
+      "apiVersion": "2016-03-30",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/virtualNetworks', 'hackathonVnet')]"
+      ],
+      "tags": {
+        "displayName": "hackathonSqlVM Nic"
+      },
+      "properties": {
+        "ipConfigurations": [
+          {
+            "name": "ipconfig1",
+            "properties": {
+              "privateIPAllocationMethod": "Dynamic",
+              "subnet": {
+                "id": "[variables('hackathonSqlVM SubnetRef')]"
               }
+            }
           }
-      },
-      {
-          "name": "[variables('hackathonSqlVM NicName')]",
-          "type": "Microsoft.Network/networkInterfaces",
-          "location": "[resourceGroup().location]",
-          "apiVersion": "2016-03-30",
-          "dependsOn": [
-              "[resourceId('Microsoft.Network/virtualNetworks', 'hackathonVnet')]"
-          ],
-          "tags": {
-              "displayName": "hackathonSqlVM Nic"
-          },
-          "properties": {
-              "ipConfigurations": [
-                  {
-                      "name": "ipconfig1",
-                      "properties": {
-                          "privateIPAllocationMethod": "Dynamic",
-                          "subnet": {
-                              "id": "[variables('hackathonSqlVM SubnetRef')]"
-                          }
-                      }
-                  }
-              ]
-          }
-      },
+        ]
+      }
+    },
     {
       "name": "[parameters('hackathonSqlVM Name')]",
       "type": "Microsoft.Compute/virtualMachines",
